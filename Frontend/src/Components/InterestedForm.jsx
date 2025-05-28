@@ -1,10 +1,11 @@
 import React from "react";
+import bg4 from '../assets/images/img_bg_4.jpg'
 
 const InterestedForm = () => {
   return (
     <div
       className="flex items-center justify-center from-gray-800 to-gray-900 h-96"
-      style={{ backgroundImage: "url('../src/assets/images/img_bg_4.jpg')" }}
+           style={{ backgroundImage: `url(${bg4})` }}
     >
       <div className="text-center px-4">
         <h1 className="text-4xl md:text-5xl font-semibold font-Sacremento text-white mb-4">
