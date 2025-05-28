@@ -1,4 +1,6 @@
 import React from "react";
+import groom from '../assets/images/groom.jpg';
+import bride from '../assets/images/bride.jpg';
 
 const MatchingSection = () => {
   return (
@@ -24,7 +26,7 @@ const MatchingSection = () => {
           <div className="relative flex items-center justify-center gap-3">
             {/* Groom Image */}
             <img
-              src="../src/assets/images/groom.jpg"
+              src={groom}
               alt="Groom"
               className="w-32 h-32 rounded-full object-cover"
             />
@@ -36,7 +38,7 @@ const MatchingSection = () => {
 
             {/* Bride Image */}
             <img
-              src="../src/assets/images/bride.jpg"
+              src={bride}
               alt="Bride"
               className="w-32 h-32 rounded-full object-cover"
             />
@@ -73,7 +75,7 @@ const MatchingSection = () => {
             </p>
             <div className="flex items-center justify-center mt-6">
               <img
-                src="../src/assets/images/groom.jpg"
+                src={groom}
                 alt="groom_img"
                 className="w-36 h-36 rounded-full object-cover"
               />
@@ -97,7 +99,7 @@ const MatchingSection = () => {
             </p>
             <div className="flex items-center justify-center mt-6">
               <img
-                src="../src/assets/images/bride.jpg"
+                src={bride}
                 alt="bride_img"
                 className="w-36 h-36 rounded-full object-cover"
               />
