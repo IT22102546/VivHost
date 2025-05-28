@@ -1,5 +1,8 @@
 import React from "react";
 import Slider from "react-slick";
+import couple3 from '../assets/images/couple-3.jpg';
+import customer from '../assets/images/couple-1.png';
+
 
 const TestimonialCarousel = () => {
   const settings = {
@@ -23,7 +26,7 @@ const TestimonialCarousel = () => {
         <Slider {...settings}>
           <div className="flex flex-col items-center text-center">
             <img
-              src="../src/assets/images/couple-1.png"
+              src={customer}
               alt="Danial"
               className="w-24 h-24 rounded-full mb-4 mx-auto" // Added 'mx-auto' to center image horizontally
             />
@@ -36,7 +39,7 @@ const TestimonialCarousel = () => {
           {/* Add more slides */}
           <div className="flex flex-col items-center text-center">
             <img
-              src="../src/assets/images/couple-3.jpg"
+              src={couple3}
               alt="Customer"
               className="w-24 h-24 rounded-full mb-4 mx-auto" // Added 'mx-auto' to center image horizontally
             />
