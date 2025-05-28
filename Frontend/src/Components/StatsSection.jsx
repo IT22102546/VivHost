@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useInView } from "react-intersection-observer"; // Import intersection observer hook
+import stat from '../assets/images/img_bg_3.jpg';
 
 const StatsSection = () => {
   const [countStarted, setCountStarted] = useState(false);
@@ -40,7 +41,7 @@ const StatsSection = () => {
   return (
     <div
       className="bg-white py-12 sm:py-16 lg:py-20"
-      style={{ backgroundImage: "url('../src/assets/images/img_bg_3.jpg')" }}
+      style={{ backgroundImage: `url(${stat})` }}
       ref={ref}
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
