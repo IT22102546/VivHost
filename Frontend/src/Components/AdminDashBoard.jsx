@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import DashSidebar from "./DashSidebar";
+import DashSidebar from "./DashSideBar";
 import {
   FaUser,
   FaCalendarAlt,
