@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { signOut } from "../redux/user/userSlice";
 import homeTile from '../assets/images/homeTile.jpg';
+import logo from '../assets/Logo/logowhite.png';
 
 function Header() {
   const location = useLocation();
@@ -52,7 +53,7 @@ function Header() {
         {/* Logo - Simplified on mobile */}
         <Link to="/" className="flex items-center gap-1 sm:gap-2">
           <img
-            src="../src/assets/Logo/logowhite.png"
+            src={logo}
             alt="logo"
             className="h-12 w-12 sm:h-14 sm:w-14 md:h-[68px] md:w-[68px]"
           />
