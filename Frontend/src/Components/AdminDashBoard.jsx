@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import DashSidebar from "./DashSideBar";
 import {
   FaUser,
   FaCalendarAlt,
@@ -16,6 +15,7 @@ import AdminInterested from "../Pages/admin/AdminInterested";
 import { useFullscreen } from "../hook/useFullscreen";
 import { AnimatePresence, motion } from "framer-motion";
 import AdminHeader from "./AdminHeader";
+import DashSideBar from "./DashSideBar";
 
 const AdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -357,7 +357,7 @@ const AdminDashboard = () => {
             exit="closed"
             variants={sidebarVariants}
           >
-            <DashSidebar
+            <DashSideBar
               onNavItemClick={handleNavItemClick}
               activeSection={activeSection}
             />

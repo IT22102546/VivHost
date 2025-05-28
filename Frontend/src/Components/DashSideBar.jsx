@@ -1,7 +1,7 @@
 import React from "react";
 import { FaUser, FaCalendarAlt, FaHeart, FaHome } from "react-icons/fa";
 
-const DashSidebar = ({ onNavItemClick, activeSection }) => {
+const DashSideBar = ({ onNavItemClick, activeSection }) => {
   return (
     <div className="w-52 h-full bg-white p-2 pt-0 pl-0 rounded-r-lg shadow-lg">
       {/* Logo and Admin Title */}
@@ -94,4 +94,4 @@ const DashSidebar = ({ onNavItemClick, activeSection }) => {
   );
 };
 
-export default DashSidebar;
+export default DashSideBar;
