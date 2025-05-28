@@ -1,4 +1,5 @@
 import React from "react";
+import logo from '../assets/Logo/logowhite.png';
 
 function Footer() {
   return (
@@ -7,7 +8,7 @@ function Footer() {
         {/* Logo and other things */}
         <div className="space-y-3">
           <img
-            src="../src/assets/Logo/logo.jpg"
+            src={logo}
             alt="logo"
             className="h-[68px] w-[68px]"
           />
