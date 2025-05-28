@@ -3,6 +3,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { signOut } from "../redux/user/userSlice";
+import homeTile from '../assets/images/homeTile.jpg';
 
 function Header() {
   const location = useLocation();
@@ -41,7 +42,7 @@ function Header() {
   return (
     <header
       className="relative h-[60vh] sm:h-[70vh] md:h-[80vh] bg-cover bg-center"
-      style={{ backgroundImage: "url('../src/assets/images/homeTile.jpg')" }}
+      style={{ backgroundImage: `url(${homeTile})` }}
     >
       {/* Overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-50"></div>
