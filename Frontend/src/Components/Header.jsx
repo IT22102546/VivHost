@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { signOut } from "../redux/user/userSlice";
 import homeTile from '../assets/images/homeTile.jpg';
@@ -12,7 +12,21 @@ function Header() {
   const { currentUser } = useSelector((state) => state.user) || {};
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
   
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const getPageTitle = (pathname) => {
     switch (pathname) {
       case "/about":
@@ -26,7 +40,7 @@ function Header() {
       case "/sign-in":
         return "Login";
       case "/":
-        case "/home":
+      case "/home":
         return "";
       default:
         return "Viwahaa Matrimony";
@@ -42,22 +56,28 @@ function Header() {
 
   return (
     <header
-      className="relative h-[60vh] sm:h-[70vh] md:h-[80vh] bg-cover bg-center"
+      className={`relative h-[80vh] sm:h-[90vh] bg-cover bg-center transition-all duration-500 ${
+        scrolled && location.pathname === "/" ? "h-[70vh] sm:h-[80vh]" : ""
+      }`}
       style={{ backgroundImage: `url(${homeTile})` }}
     >
       {/* Overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-50"></div>
 
       {/* Navbar */}
-      <nav className="absolute top-0 left-0 w-full px-4 sm:px-6 md:px-12 lg:px-52 py-4 sm:py-6 md:py-12 flex justify-between items-center z-10">
+      <nav className={`absolute top-0 left-0 w-full px-4 sm:px-6 md:px-12 lg:px-52 py-4 sm:py-6 md:py-12 flex justify-between items-center z-10 transition-all duration-300`}>
         {/* Logo - Simplified on mobile */}
         <Link to="/" className="flex items-center gap-1 sm:gap-2">
           <img
             src={logo}
             alt="logo"
-            className="h-12 w-12 sm:h-14 sm:w-14 md:h-[68px] md:w-[68px]"
+            className={`h-12 w-12 sm:h-14 sm:w-14 md:h-[68px] md:w-[68px] transition-all duration-300 ${
+              scrolled ? "h-10 w-10 sm:h-12 sm:w-12" : ""
+            }`}
           />
-          <h1 className="font-Sacremento text-2xl sm:text-3xl md:text-4xl font-normal text-white">
+          <h1 className={`font-Sacremento text-2xl sm:text-3xl md:text-4xl font-normal text-white transition-all duration-300 ${
+            scrolled ? "text-xl sm:text-2xl" : ""
+          }`}>
             Viwahaa
           </h1>
         </Link>
@@ -154,15 +174,23 @@ function Header() {
 
       {/* Conditional Content for Home Page */}
       {location.pathname === "/" && (
-        <div className="absolute bottom-10 sm:bottom-20 left-1/2 transform -translate-x-1/2 z-10 text-center text-white px-4 sm:px-6 md:px-12 w-full">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[75px] font-normal font-Sacremento mb-3 sm:mb-4">
+        <div className={`absolute bottom-10 sm:bottom-20 left-1/2 transform -translate-x-1/2 z-10 text-center text-white px-4 sm:px-6 md:px-12 w-full transition-all duration-500 ${
+          scrolled ? "bottom-1/2 -translate-y-1/2" : ""
+        }`}>
+          <h2 className={`text-3xl sm:text-4xl md:text-5xl lg:text-[75px] font-normal font-Sacremento mb-3 sm:mb-4 transition-all duration-500 ${
+            scrolled ? "text-2xl sm:text-3xl md:text-4xl mb-2" : ""
+          }`}>
             This is where you meet your life partner
           </h2>
-          <p className="text-base sm:text-lg mb-4 sm:mb-6 font-workSans max-w-2xl mx-auto">
+          <p className={`text-base sm:text-lg mb-4 sm:mb-6 font-workSans max-w-2xl mx-auto transition-all duration-500 ${
+            scrolled ? "text-sm sm:text-base mb-3 opacity-90" : ""
+          }`}>
             We verify every profile manually so that you know you are dealing
             with real people.
           </p>
-          <div className="flex flex-col gap-3 items-center justify-center md:flex-row md:gap-5">
+          <div className={`flex flex-col gap-3 items-center justify-center md:flex-row md:gap-5 transition-all duration-500 ${
+            scrolled ? "scale-90" : ""
+          }`}>
             {!currentUser?.user ? (
               <>
                 <Link to="/register" className="w-full sm:w-auto">
@@ -197,8 +225,12 @@ function Header() {
 
       {/* Centered Title */}
       {location.pathname !== "/" && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-full px-4 text-center">
-          <h1 className="text-white text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-CretinaBold">
+        <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-full px-4 text-center transition-all duration-300 ${
+          scrolled ? "top-1/3" : ""
+        }`}>
+          <h1 className={`text-white text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-CretinaBold transition-all duration-300 ${
+            scrolled ? "text-3xl sm:text-4xl md:text-5xl" : ""
+          }`}>
             {getPageTitle(location.pathname)}
           </h1>
         </div>

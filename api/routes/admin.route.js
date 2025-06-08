@@ -21,7 +21,7 @@ import {
   processPayment,
   updatePackageStatus,
   updateExpiryDate,
-  updateProfile
+ 
 } from "../controllers/admin.controller.js";
 
 
@@ -36,7 +36,7 @@ router.get("/profiles/search", searchProfiles);
 router.delete("/profiles/:id", deleteProfile);
 router.put("/profiles/:id/status", updateProfileStatus);
 router.get("/profiles/:id", getProfileDetails);
-router.put("/profiles/:id", updateProfile);
+//router.put("/profiles/:id", updateProfile);
 
 // Stats routes
 router.get("/bookings/count", getBookingsCount);
