@@ -1,103 +1,85 @@
 import React, { useState, useEffect } from "react";
-import { useInView } from "react-intersection-observer"; // Import intersection observer hook
+import { useInView } from "react-intersection-observer";
+import { FaUsers, FaUser, FaCalendarAlt, FaClock } from "react-icons/fa";
 import stat from '../assets/images/img_bg_3.jpg';
 
 const StatsSection = () => {
-  const [countStarted, setCountStarted] = useState(false);
   const { ref, inView } = useInView({
-    triggerOnce: true, // Only trigger once when it comes into view
-    threshold: 0.5, // Trigger when 50% of the section is visible
+    triggerOnce: true,
+    threshold: 0.5,
   });
 
-  // Animate count from 0 to the target value
-  const animateCount = (id, start, end) => {
-    let startTime = Date.now();
-    let duration = 3000; // Duration in ms (1.5 seconds)
-    let frame = () => {
-      let timeElapsed = Date.now() - startTime;
-      let progress = Math.min(timeElapsed / duration, 1); // Progress of animation
-      let current = Math.floor(start + progress * (end - start)); // Calculate the current count
-      document.getElementById(id).innerText = current; // Update the DOM with the current number
+  const [counts, setCounts] = useState({
+    count1: 0,
+    count2: 0,
+    count3: 0,
+    count4: 0,
+  });
 
-      if (progress < 1) {
-        requestAnimationFrame(frame); // Continue the animation
-      } else {
-        setCountStarted(true); // End the animation when it's done
-      }
-    };
-    requestAnimationFrame(frame); // Start the animation
+  const targets = {
+    count1: 3056,
+    count2: 5000,
+    count3: 1852,
+    count4: 2345,
   };
 
   useEffect(() => {
-    if (inView && !countStarted) {
-      // Start animation only once when the section comes into view
-      animateCount("count1", 0, 3056);
-      animateCount("count2", 0, 5000);
-      animateCount("count3", 0, 1852);
-      animateCount("count4", 0, 2345);
+    if (inView) {
+      Object.entries(targets).forEach(([key, end]) => {
+        let start = 0;
+        let duration = 2000;
+        let startTime = Date.now();
+
+        const animate = () => {
+          const now = Date.now();
+          const progress = Math.min((now - startTime) / duration, 1);
+          const current = Math.floor(start + (end - start) * progress);
+
+          setCounts(prev => ({
+            ...prev,
+            [key]: current,
+          }));
+
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          }
+        };
+
+        requestAnimationFrame(animate);
+      });
     }
-  }, [inView, countStarted]); // Trigger animation when the section comes into view
+  }, [inView]);
+
+  const stats = [
+    { id: "count1", icon: <FaUsers />, label: "HAPPY COUPLES" },
+    { id: "count2", icon: <FaUser />, label: "PROFILES" },
+    { id: "count3", icon: <FaCalendarAlt />, label: "EVENTS DONE" },
+    { id: "count4", icon: <FaClock />, label: "HOURS SPENT" },
+  ];
 
   return (
     <div
-      className="bg-white py-12 sm:py-16 lg:py-20"
+      className="py-20 bg-cover bg-center bg-no-repeat relative"
       style={{ backgroundImage: `url(${stat})` }}
       ref={ref}
     >
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-4">
-          {/* Stat 1 */}
-          <div className="text-center">
-            <div
-              id="count1"
-              className="text-4xl font-thin text-white sm:text-5xl lg:text-6xl font-workSans"
-            >
-              {inView && !countStarted ? "0" : "3056"}
+      <div className="absolute inset-0 bg-black bg-opacity-50" /> {/* Optional overlay */}
+      <div className="relative max-w-6xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center z-10">
+        {stats.map((stat, index) => (
+          <div key={index} className="flex flex-col items-center">
+            <div className="bg-white rounded-full shadow-lg p-4 mb-4">
+              <div className="text-orange-500 text-3xl">{stat.icon}</div>
             </div>
-            <p className="mt-2 text-lg font-light text-white sm:text-xl">
-              HAPPY COUPLES
+            <div
+              className="text-white text-4xl font-light font-workSans sm:text-5xl lg:text-6xl"
+            >
+              {counts[stat.id]}
+            </div>
+            <p className="mt-2 text-white text-sm sm:text-lg font-light tracking-wide uppercase">
+              {stat.label}
             </p>
           </div>
-
-          {/* Stat 2 */}
-          <div className="text-center">
-            <div
-              id="count2"
-              className="text-4xl font-thin text-white sm:text-5xl lg:text-6xl font-workSans"
-            >
-              {inView && !countStarted ? "0" : "5000"}
-            </div>
-            <p className="mt-2 text-lg font-light text-white sm:text-xl">
-              PROFILES
-            </p>
-          </div>
-
-          {/* Stat 3 */}
-          <div className="text-center">
-            <div
-              id="count3"
-              className="text-4xl font-thin text-white sm:text-5xl lg:text-6xl font-workSans"
-            >
-              {inView && !countStarted ? "0" : "1852"}
-            </div>
-            <p className="mt-2 text-lg font-light text-white sm:text-xl">
-              EVENTS DONE
-            </p>
-          </div>
-
-          {/* Stat 4 */}
-          <div className="text-center">
-            <div
-              id="count4"
-              className="text-4xl font-thin text-white sm:text-5xl lg:text-6xl font-workSans"
-            >
-              {inView && !countStarted ? "0" : "2345"}
-            </div>
-            <p className="mt-2 text-lg font-light text-white sm:text-xl">
-              HOURS SPENT
-            </p>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );

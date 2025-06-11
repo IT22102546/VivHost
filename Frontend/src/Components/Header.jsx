@@ -5,6 +5,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { signOut } from "../redux/user/userSlice";
 import homeTile from '../assets/images/homeTile.jpg';
 import logo from '../assets/Logo/logowhite.png';
+import service from '../assets/images/service.jpg';
+
+
 
 function Header() {
   const location = useLocation();
@@ -32,7 +35,7 @@ function Header() {
       case "/about":
         return "About Us";
       case "/services":
-        return "Our Services";
+        return "Services";
       case "/pricing":
         return "Pricing Plans";
       case "/contact":
@@ -59,7 +62,12 @@ function Header() {
       className={`relative h-[80vh] sm:h-[90vh] bg-cover bg-center transition-all duration-500 ${
         scrolled && location.pathname === "/" ? "h-[70vh] sm:h-[80vh]" : ""
       }`}
-      style={{ backgroundImage: `url(${homeTile})` }}
+      style={{
+        backgroundImage: `url(${location.pathname === "/services" ? service : homeTile})`,
+        backgroundPosition: location.pathname === "/services" ? "center top" : "center"
+      }}
+
+
     >
       {/* Overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-50"></div>

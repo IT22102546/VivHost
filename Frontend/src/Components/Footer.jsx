@@ -1,116 +1,83 @@
 import React from "react";
+import { FaTwitter, FaFacebookF, FaLinkedinIn, FaInstagram, FaArrowUp } from "react-icons/fa";
 import logo from '../assets/Logo/logo.jpg';
 
 function Footer() {
   return (
-    <footer className="bg-gray-100 text-gray-800 py-8 px-4">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4">
-        {/* Logo and other things */}
-        <div className="space-y-3">
-          <img
-            src={logo}
-            alt="logo"
-            className="h-[68px] w-[68px]"
-          />
-          <h1 className="text-2xl">Viwahaa Matrimony</h1>
-          <span className="text-gray-400">Find your Tamil soulmate here.</span>
+    <footer className="bg-white text-gray-800 pt-12 px-4 border-t border-gray-200 relative">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-sm">
+        {/* Logo and Description */}
+        <div className="space-y-4">
+          <img src={logo} alt="logo" className="h-20 w-20" />
+          <h1 className="text-2xl font-semibold">Viwahaa Matrimony</h1>
+          <p className="text-gray-500">Find your Tamil soul mate here!</p>
         </div>
 
-        {/* Useful Links Section */}
-        <div className="space-y-3">
+        {/* Useful Links */}
+        <div className="space-y-4">
           <h3 className="text-lg font-semibold">Useful Links</h3>
-          <ul className="space-y-2">
-            <li>
-              <a href="#" className="hover:text-orange-600 transition">
-                Home
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-orange-600 transition">
-                About Us
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-orange-600 transition">
-                Services
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-orange-600 transition">
-                Pricing
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-orange-600 transition">
-                Terms of Service
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-orange-600 transition">
-                Privacy Policy
-              </a>
-            </li>
+          <ul className="space-y-2 text-sm">
+            {["Home", "About Us", "Services", "Pricing", "Terms of Service", "Privacy Policy"].map((link, idx) => (
+              <li key={idx}>
+                <a href="#" className="text-orange-600 hover:underline">{link}</a>
+              </li>
+            ))}
           </ul>
         </div>
 
-        {/* Our Services Section */}
-        <div className="space-y-3">
+        {/* Our Services */}
+        <div className="space-y-4">
           <h3 className="text-lg font-semibold">Our Services</h3>
-          <ul className="space-y-2">
-            <li>
-              <a href="#" className="hover:text-gray-600 transition">
-                Verified Profiles
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-gray-600 transition">
-                Manual Profile Matching
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-gray-600 transition">
-                Expert Horoscope Matching
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-gray-600 transition">
-                Cultural Resonance
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-gray-600 transition">
-                Tailored Relationship Guidance
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-gray-600 transition">
-                Local Expertise in Jaffna
-              </a>
-            </li>
+          <ul className="space-y-2 text-sm">
+            {[
+              "Verified Profiles",
+              "Manual Profile Matching",
+              "Expert Horoscope Matching",
+              "Cultural Resonance",
+              "Tailored Relationship Guidance",
+              "Local Expertise in Jaffna",
+            ].map((service, idx) => (
+              <li key={idx}>
+                <a href="#" className="hover:text-gray-600">{service}</a>
+              </li>
+            ))}
           </ul>
         </div>
 
-        {/* Contact Section */}
-        <div className="space-y-3">
+        {/* Contact */}
+        <div className="space-y-4">
           <h3 className="text-lg font-semibold">Contact</h3>
-          <address className="not-italic">
-            <p>No.222, 2nd Cross Street, Jaffna, Sri Lanka</p>
-            <p className="mt-2">
-              <strong>Mobile:</strong> +94 74 174 4952
-            </p>
+          <address className="not-italic space-y-2 text-sm leading-relaxed">
+            <p>No.222, 2nd Cross Street,<br />Jaffna, Sri Lanka</p>
+            <p><strong>Mobile:</strong> +94 74 174 4952</p>
+            <p><strong>Landline:</strong> +94 21 728 4036</p>
             <p>
-              <strong>Landline:</strong> +94 21 728 4036
-            </p>
-            <p className="mt-2">
-              <strong>Email:</strong> vivahsamattimony@gmail.com
+              <a href="mailto:viwahaamatrimony@gmail.com" className="text-orange-600">
+                viwahaamatrimony@gmail.com
+              </a>
             </p>
           </address>
         </div>
       </div>
 
-      {/* Copyright Section */}
-      <div className="max-w-6xl mx-auto mt-8 pt-4 border-t border-gray-300 text-center">
-        <p>© Copyright vivahsamattimony.com. All Rights Reserved</p>
+      {/* Copyright */}
+      <div className="mt-12 border-t border-gray-300 text-center py-4 text-sm text-gray-600 relative">
+        <p>© Copyright viwahaamatrimony.com. All Rights Reserved</p>
+
+        {/* Social Icons */}
+        <div className="mt-4 flex justify-center space-x-6 text-orange-600 text-xl">
+          <FaTwitter className="cursor-pointer" />
+          <FaFacebookF className="cursor-pointer" />
+          <FaLinkedinIn className="cursor-pointer" />
+          <FaInstagram className="cursor-pointer" />
+        </div>
+      </div>
+
+      {/* Scroll Up Button */}
+      <div className="absolute bottom-4 right-4">
+        <button className="bg-gray-200 p-2 rounded-md hover:bg-gray-300 transition">
+          <FaArrowUp className="text-gray-700" />
+        </button>
       </div>
     </footer>
   );
