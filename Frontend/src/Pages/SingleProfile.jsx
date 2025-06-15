@@ -33,7 +33,7 @@ const SingleProfile = () => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showChartModal, setShowChartModal] = useState(false);
   const { currentUser } = useSelector((state) => state.user);
-  const storageUrl = "http://viwahaa.com/storage";
+  const storageUrl = `https://api.epicworkspace.site/uploads/`;
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -73,7 +73,7 @@ const SingleProfile = () => {
     const images = [];
     if (!storageUrl) return images;
 
-    if (user?.profile_img) images.push(`${storageUrl}/${user.profile_img}`);
+    if (user?.profile_img) images.push(`${storageUrl}/Customer_prof/${user.profile_img}`);
 
     if (currentUser?.membership_type === "ultimate") {
       if (user?.img_1) images.push(`${storageUrl}/${user.img_1}`);

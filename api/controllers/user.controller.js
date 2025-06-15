@@ -589,3 +589,46 @@ export const uploadUserImage = async (req, res, next) => {
     next(error);
   }
 };
+export const createInterested = async (req, res, next) => {
+  try {
+    const { name, email } = req.body;
+
+    // Basic validation
+    if (!name || !email) {
+      return next(errorHandler(400, "Name and email are required"));
+    }
+
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return next(errorHandler(400, "Please enter a valid email address"));
+    }
+
+    // Insert into database
+    const [result] = await db.execute(
+      `INSERT INTO intresteds (name, email, created_at, updated_at) 
+       VALUES (?, ?, NOW(), NOW())`,
+      [name, email]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Thank you for your interest! We'll contact you soon.",
+      data: {
+        id: result.insertId,
+        name,
+        email
+      }
+    });
+
+  } catch (error) {
+    console.error("Error saving interested user:", error);
+    
+    // Handle duplicate email error
+    if (error.code === 'ER_DUP_ENTRY') {
+      return next(errorHandler(400, "This email is already registered"));
+    }
+    
+    next(error);
+  }
+};

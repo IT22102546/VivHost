@@ -98,6 +98,8 @@ function Matching() {
     setFilteredProfiles(profiles);
   };
 
+    const defaultImage = "https://w7.pngwing.com/pngs/81/570/png-transparent-profile-logo-computer-icons-user-user-blue-heroes-logo-thumbnail.png";
+
   return (
     <div className="matching-page px-4 sm:px-6 lg:px-8 xl:px-20 py-4 sm:py-6 lg:py-8 xl:py-10 max-w-7xl mx-auto">
       <div className="filter-section mb-6 sm:mb-8 lg:mb-10">
@@ -354,15 +356,22 @@ function Matching() {
                 >
                   <div className="profile-image mb-3 sm:mb-4 flex justify-center">
                     <img
-                      src={
-                        profile.profile_img
-                          ? `http://viwahaa.com/storage/${profile.profile_img}`
-                          : "https://w7.pngwing.com/pngs/81/570/png-transparent-profile-logo-computer-icons-user-user-blue-heroes-logo-thumbnail.png"
-                      }
-                      alt={profile.name}
-                      className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-cover rounded-full border-2 border-orange-500"
-                      loading="lazy"
-                    />
+  src={
+    profile.profile_img
+      ? profile.profile_img.includes('http')
+        ? profile.profile_img
+        : `https://api.epicworkspace.site/uploads/${profile.profile_img}`
+      : defaultImage
+  }
+  alt={profile.name}
+  className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-cover rounded-full border-2 border-orange-500"
+  loading="lazy"
+  decoding="async"
+  onError={(e) => {
+    e.target.src = defaultImage;
+  }}
+/>
+
                   </div>
                   <div className="profile-info space-y-1 sm:space-y-2">
                     <p className="text-base sm:text-lg font-semibold text-center text-gray-800">
