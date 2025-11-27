@@ -1,4 +1,5 @@
 import db from "../utils/dbconfig.js";
+import bcrypt from "bcryptjs";
 
 // Check if user has admin permissions
 export const getAdminPermissions = async (req, res) => {
@@ -29,12 +30,12 @@ export const getProfiles = async (req, res) => {
     const [rows] = await db.execute(`
       SELECT 
         id, member_id, first_name, last_name, email, 
-        contact_no, whatsapp_no, d_o_b, age, birth_place,
+        contact_no, whatsapp_no, d_o_b, age,gender, birth_place,
         address, birth_time, maritial_status, height, weight,
         complexion, physical_status, cast, religion, star_sign,
         family_value, family_type, family_status, fathers_name,
         fathers_occupation, mothers_name, mothers_occupation,
-        brothers, sisters, country_of_birth, city_of_birth,
+        brothers, sisters,mothers_native_place,fathers_native_place,married_brothers, married_sisters,more_family, country_of_birth, city_of_birth,
         country_of_resident, city_of_resident, country_of_citizenship,
         eating_habit, smoking_habit, drinking_habit, primary_school,
         secondary_school, education, occupation, annual_income,
@@ -199,6 +200,112 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// Update profile images
+export const updateProfileImages = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const file = req.file; // Using multer single file upload
+
+    if (!file) {
+      return res.status(400).json({ error: "No image file provided" });
+    }
+
+    // Check if profile exists
+    const [check] = await db.execute(
+      "SELECT id FROM customers WHERE id = ?",
+      [id]
+    );
+
+    if (check.length === 0) {
+      // Clean up the uploaded file if profile doesn't exist
+      fs.unlinkSync(file.path);
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    // Determine the field to update based on query parameter or body
+    const imageType = req.body.type || 'profile_img';
+    const validTypes = ['profile_img', 'chart_img', 'img_1', 'img_2'];
+    
+    if (!validTypes.includes(imageType)) {
+      fs.unlinkSync(file.path);
+      return res.status(400).json({ error: "Invalid image type" });
+    }
+
+    // Construct the file path to store in database
+    const filePath = `userimg/${file.filename}`;
+
+    // Update the database
+    const [result] = await db.execute(
+      `UPDATE customers SET ${imageType} = ? WHERE id = ?`,
+      [filePath, id]
+    );
+
+    if (result.affectedRows === 0) {
+      fs.unlinkSync(file.path);
+      return res.status(500).json({ error: "Failed to update profile images" });
+    }
+
+    // Get the updated profile to return the new image URL
+    const [updatedProfile] = await db.execute(
+      "SELECT * FROM customers WHERE id = ?",
+      [id]
+    );
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Profile image updated successfully",
+      imageUrl: filePath,
+      profile: updatedProfile[0]
+    });
+    
+  } catch (error) {
+    console.error("Update profile images error:", error);
+    // Clean up file if error occurred
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ 
+      error: "Failed to update profile images",
+      details: error.message 
+    });
+  }
+};
+
+// Update user password
+export const updateUserPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+  
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password in users table
+    const [result] = await db.execute(
+      "UPDATE customers SET password = ? WHERE id = ?",
+      [hashedPassword, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Password updated successfully" 
+    });
+  } catch (error) {
+    console.error("Update password error:", error);
+    res.status(500).json({ 
+      error: "Failed to update password",
+      details: error.message 
+    });
+  }
+};
+
+
 // Get profile details
 export const getProfileDetails = async (req, res) => {
   try {
@@ -206,14 +313,14 @@ export const getProfileDetails = async (req, res) => {
 
     const [rows] = await db.execute(
       `SELECT 
-        id, member_id, first_name, last_name, email, contact_no, whatsapp_no,
-        d_o_b, age, birth_place, address, birth_time, maritial_status, height,
+        id, member_id, first_name, last_name, email, contact_no, whatsapp_no, password,
+        d_o_b, age,gender, birth_place, address, birth_time, maritial_status, height,
         weight, complexion, physical_status, cast, religion, star_sign,
         family_value, family_type, family_status, fathers_name, fathers_occupation,
-        mothers_name, mothers_occupation, brothers, sisters,
+        mothers_name, mothers_occupation, brothers, sisters,mothers_native_place,fathers_native_place,married_brothers, married_sisters,more_family,
         country_of_birth, city_of_birth, country_of_resident, city_of_resident,
         country_of_citizenship, eating_habit, smoking_habit, drinking_habit,
-        primary_school, secondary_school, education, occupation, annual_income,
+        primary_school, secondary_school, education, occupation,occupation_details, annual_income,
         profile_img,img_1,img_2,chart_img,
         partner_country_of_resident, partner_resident_status, partner_education,
         partner_occupation, partner_annual_income, partner_marital_status,
@@ -403,7 +510,12 @@ export const deleteProfileInterest = async (req, res) => {
 export const getBookings = async (req, res) => {
   try {
     const [rows] = await db.execute(`
-      SELECT bp.*, c.first_name, c.last_name, c.contact_no, c.whatsapp_no 
+      SELECT bp.*, 
+             c.first_name, 
+             c.last_name, 
+             c.contact_no, 
+             c.whatsapp_no,
+             c.package_plan
       FROM booked_packages bp
       JOIN customers c ON bp.customer_id = c.id
       ORDER BY bp.created_at DESC
@@ -413,6 +525,7 @@ export const getBookings = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch bookings" });
   }
 };
+
 
 // Search bookings
 export const searchBookings = async (req, res) => {
@@ -485,20 +598,37 @@ export const updatePackageStatus = async (req, res) => {
       return res.status(400).json({ error: "Invalid status value" });
     }
 
-    const [result] = await db.execute(
-      "UPDATE booked_packages SET package_plan = ? WHERE id = ?",
-      [status, id]
+    // Get the booking to find the customer
+    const [booking] = await db.execute(
+      "SELECT customer_id FROM booked_packages WHERE id = ?",
+      [id]
     );
 
-    if (result.affectedRows === 0) {
+    if (!booking.length) {
       return res.status(404).json({ error: "Booking not found" });
     }
 
+    const customerId = booking[0].customer_id;
+
+    // Update the booked package
+    await db.execute(
+      "UPDATE booked_packages SET package = ? WHERE id = ?",
+      [status, id]
+    );
+
+    // Update the customer's current package plan
+    await db.execute(
+      "UPDATE customers SET package_plan = ? WHERE id = ?",
+      [status, customerId]
+    );
+
     res.status(200).json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: "Failed to update package status" });
+    console.error("Update error:", error);
+    res.status(500).json({ error: error.message || "Failed to update package status" });
   }
 };
+
 
 // Update expiry date
 export const updateExpiryDate = async (req, res) => {

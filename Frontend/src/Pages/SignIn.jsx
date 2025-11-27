@@ -29,7 +29,7 @@ const SignIn = () => {
     dispatch(signInStart());
 
     try {
-      const response = await fetch("/api/auth/signin", {
+      const response = await fetch("https://api.viwahaa.com/api/auth/signin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

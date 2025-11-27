@@ -7,6 +7,9 @@ import {
   createBookedPackage,
   getUserPackage,
   uploadUserImage,
+  getMatchingUsers,
+  updateUserStatus,
+  createInterested
 } from "../controllers/user.controller.js";
 
 import multer from "multer";
@@ -87,6 +90,10 @@ router.put("/update/:id", uploadUserImg, updateUser);
 router.get("/getuser/:id", getUser);
 router.get("/matching-profiles/:userId", getMatchingProfiles);
 router.get("/users", getUsers);
+router.get("/matchingusers", getMatchingUsers);
 router.get("/user-pkg/:id", getUserPackage);
+router.get("/user-pkg/:id", getUserPackage);
+router.put("/:id/status", updateUserStatus);
+router.post("/interested", createInterested);
 
 export default router;

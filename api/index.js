@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth.route.js";
 import userRoute from "./routes/user.route.js";
 import messageRoutes from "./routes/message.route.js";
 import adminRoutes from "./routes/admin.route.js";
+import staffRoutes from './routes/staff.routes.js';
 import db from "./utils/dbconfig.js";
 import path from "path";
 
@@ -18,7 +19,7 @@ app.use(cookieParser());
 app.use(express.json());
 
 const corsOptions = {
-  origin: "*",
+  origin: 'https://viwahaa.com',
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -42,10 +43,14 @@ app.use((req, res, next) => {
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Routes
+app.get("/", (req, res) => {
+    res.status(200).json({ success: true, message: "Viwaaha Matrimony Backend is running successfully!" });
+});
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoute);
 app.use("/api/messages", messageRoutes);
 app.use("/api/admin", adminRoutes);
+app.use('/api/staff', staffRoutes);
 
 // Track online users
 const onlineUsers = new Map();

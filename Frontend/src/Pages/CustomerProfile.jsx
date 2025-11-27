@@ -1,11 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
-
 import { signOut, updateUserFailure, updateUserStart, updateUserSuccess } from "../redux/user/userSlice";
-
 import { Link, useNavigate } from "react-router-dom";
-
-import { Edit, BarChart, Search, UserPlus, LogOut, Award } from "lucide-react";
+import { Edit, BarChart, Search, UserPlus, LogOut, Award, Camera } from "lucide-react";
+import ImageCropper from "../Components/ImageCropper";
 
 const CustomerProfile = () => {
   const { currentUser } = useSelector((state) => state.user);
@@ -19,14 +17,35 @@ const CustomerProfile = () => {
   const [showImg1Modal, setShowImg1Modal] = useState(false);
   const [showImg2Modal, setShowImg2Modal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  
+  // Image cropping states
+  const [showCropper, setShowCropper] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState(null);
+  const [croppingFor, setCroppingFor] = useState('');
+
+  const fileInputRef = useRef(null);
+
+  const getImageUrl = (path) => {
+    if (!path) return "/default-profile.jpg";
+    
+    const urls = [
+      `https://api.viwahaa.com/uploads/${path}`,
+      `https://mobile.viwahaa.com/uploads/${path}`
+    ];
+    
+    return urls[0];
+  };
 
   console.log(currentUser);
+  const formattedDOB = currentUser?.user.d_o_b 
+  ? new Date(currentUser.user.d_o_b).toISOString().split('T')[0]
+  : '';
 
   const [formData, setFormData] = useState({
     first_name: currentUser?.user.first_name || "",
     last_name: currentUser?.user.last_name || "",
     email: currentUser?.user.email || "",
-    d_o_b: currentUser?.user.d_o_b || "",
+    d_o_b: formattedDOB,
     age: currentUser?.user.age || "",
     gender: currentUser?.user.gender || "",
     contact_no: currentUser?.user.contact_no || "",
@@ -95,6 +114,7 @@ const CustomerProfile = () => {
     img_1: currentUser?.user.img_1 || "",
     img_2: currentUser?.user.img_2 || "",
     chart_img: currentUser?.user.chart_img || "",
+    package_plan:currentUser?.user. package_plan|| "",
   });
 
   const handleLogout = () => {
@@ -110,12 +130,67 @@ const CustomerProfile = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
+const handleFileChange = (e) => {
     const { name, files } = e.target;
+    if (files && files[0]) {
+      const file = files[0];
+      
+      // Check if it's an image file that should be cropped
+      // Only crop profile_img, not img_1 or img_2
+      if (name === 'profile_img' && file.type.startsWith('image/')) {
+        // Show cropper only for profile_img
+        const imageUrl = URL.createObjectURL(file);
+        setImageToCrop(imageUrl);
+        setCroppingFor(name);
+        setShowCropper(true);
+      } else {
+        // For non-image files, chart_img, img_1, and img_2 - set directly without cropping
+        setFormData((prev) => ({
+          ...prev,
+          [name]: file,
+        }));
+      }
+    }
+  };
+
+  const handleCropComplete = (croppedImageBlob) => {
+    // Create a file from the cropped blob
+    const croppedFile = new File([croppedImageBlob], `cropped-${croppingFor}.jpg`, {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    });
+
+    // Update form data with the cropped image
     setFormData((prev) => ({
       ...prev,
-      [name]: files[0],  
+      [croppingFor]: croppedFile,
     }));
+
+    // Clean up
+    setShowCropper(false);
+    setImageToCrop(null);
+    setCroppingFor('');
+    
+    // Revoke the object URL to avoid memory leaks
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setImageToCrop(null);
+    setCroppingFor('');
+    
+    // Revoke the object URL
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
+    }
+    
+    // Reset the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSave = async (e) => {
@@ -155,10 +230,9 @@ const CustomerProfile = () => {
       dispatch(updateUserStart());
       
       // Send all data in one request
-      const response = await fetch(`/api/user/update/${currentUser.user.id}`, {
+      const response = await fetch(`https://api.viwahaa.com/api/user/update/${currentUser.user.id}`, {
         method: 'PUT',
         body: formDataObj,
-        // Don't set Content-Type header - let the browser set it with boundary
       });
   
       if (!response.ok) {
@@ -179,8 +253,109 @@ const CustomerProfile = () => {
       setIsUpdating(false);
     }
   };
-  
 
+  const ProfileImageSection = () => (
+    <div className="bg-red-800 rounded-tr-lg rounded-tl-lg p-6">
+      <div className="text-center">
+        <div className="relative inline-block group">
+          <a
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              setShowProfileModal(true);
+            }}
+            className="block"
+          >
+            <img
+              src={getImageUrl(currentUser?.user.profile_img)}
+              className="w-36 h-36 rounded-full mx-auto border-4 border-orange-200 object-cover object-center"
+              alt="Profile"
+              onError={(e) => {
+                e.target.onerror = null;
+                if (currentUser?.user.profile_img) {
+                  e.target.src = `https://mobile.viwahaa.com/uploads/${currentUser.user.profile_img}`;
+                } else {
+                  e.target.src = "/default-profile.jpg";
+                }
+              }}
+            />
+          </a>
+          {/* Camera icon overlay */}
+          <div className="absolute bottom-2 right-2 bg-white rounded-full p-2 shadow-lg transition-opacity duration-200">
+            <Camera size={16} className="text-gray-700" />
+          </div>
+        </div>
+        <h1 className="text-lg font-normal mt-2 text-white">
+          {currentUser.firstName} {currentUser.user.last_name}
+        </h1>
+        <p className="text-sm text-white">{currentUser.user.email}</p>
+        <p className="text-lg text-white">{formattedDOB}</p>
+        <p className="text-lg text-white">Age: {currentUser.user.age}</p>
+      </div>
+    </div>
+  );
+
+  const FileInputsSection = () => (
+    <>
+      <div className="md:col-span-2">
+        <label className="block mb-2 text-sm font-medium text-gray-700">
+          Profile Image<span className="text-red-500">*</span>
+        </label>
+        <div className="space-y-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            name="profile_img"
+            onChange={handleFileChange}
+            accept="image/*"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+          <p className="text-xs text-gray-500">
+            Recommended: Square image with clear face view. Image will be cropped to fit perfectly.
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <label className="block mb-2 text-sm font-medium text-gray-700">
+          Image 1<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="file"
+          name="img_1"
+          onChange={handleFileChange}
+          accept="image/*"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        />
+      </div>
+
+      <div>
+        <label className="block mb-2 text-sm font-medium text-gray-700">
+          Image 2<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="file"
+          name="img_2"
+          onChange={handleFileChange}
+          accept="image/*"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        />
+      </div>
+
+      <div>
+        <label className="block mb-2 text-sm font-medium text-gray-700">
+          Chart Image<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="file"
+          name="chart_img"
+          onChange={handleFileChange}
+          accept="image/*"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        />
+      </div>
+    </>
+  );
 
   if (!currentUser) {
     return (
@@ -190,7 +365,7 @@ const CustomerProfile = () => {
       </div>
     );
   }
-  console.log('Profile image path:', `/uploads/${currentUser.user.profile_img}`);
+
   return (
     <div className="">
       {/* Main Profile Content */}
@@ -198,79 +373,56 @@ const CustomerProfile = () => {
         <div className="flex flex-wrap">
           {/* Left Sidebar */}
           <div className="w-full md:w-1/4 mb-10">
-            <div className="bg-red-800 rounded-tr-lg rounded-tl-lg p-6">
-              <div className="text-center">
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowProfileModal(true);
-                  }}
-                >
-                 <img
-                    src={`http://localhost:7000/uploads/${currentUser?.user.profile_img || "/default-profile.jpg"}`}
-                    className="w-36 h-36 rounded-full mx-auto border-4 border-orange-200"
-                    alt="Profile"
-                    onError={(e) => {
-                      e.target.onerror = null; // Prevent infinite loop
-                      e.target.src = "/default-profile.jpg";
-                    }}
-                  />
-                  
-                </a>
-                <h1 className="text-lg font-normal mt-2 text-white">
-                  {currentUser.firstName} {currentUser.user.last_name}
-                </h1>
-                <p className="text-sm text-white">{currentUser.user.email}</p>
-                <p className="text-lg text-white">{currentUser.user.d_o_b}</p>
-                <p className="text-lg text-white">
-                  Age: {currentUser.user.age}
-                </p>
-              </div>
-            </div>
+            <ProfileImageSection />
 
             <div className="bg-gray-100 p-3">
               <button
-                className="w-full text-gray-600 text-sm font-workSans mb-4 rounded-md text-left ml-6"
+                className="w-full text-gray-600 text-sm font-workSans mb-4 rounded-md text-left ml-6 hover:text-gray-900 transition-colors"
                 onClick={() => setShowEditModal(true)}
               >
-                <Edit className="mr-2 inline-block" />
+                <Edit className="mr-2 inline-block" size={16} />
                 Edit Profile
               </button>
 
               <button
-                className="w-full text-gray-600 text-sm font-workSans mb-4 rounded-md text-left ml-6"
+                className="w-full text-gray-600 text-sm font-workSans mb-4 rounded-md text-left ml-6 hover:text-gray-900 transition-colors"
                 onClick={() => setShowChartModal(true)}
               >
-                <BarChart className="mr-2 inline-block" />
+                <BarChart className="mr-2 inline-block" size={16} />
                 View Chart
               </button>
 
-              <a
-                href="/customer/matching"
-                target="_blank"
+              <Link 
+                to={currentUser.user.status === "single" ? "/matching" : "#"} 
                 className="block w-full"
               >
-                <Link to="/matching">
-                  <button className="w-full text-gray-600 text-sm font-workSans mb-4 rounded-md text-left ml-6">
-                    <Search className="mr-2 inline-block" />
-                    Find Matching
-                  </button>
-                </Link>
-              </a>
+                <button 
+                  className={`w-full text-gray-600 text-sm font-workSans mb-4 rounded-md text-left ml-6 hover:text-gray-900 transition-colors ${
+                    currentUser.user.status !== "single" ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                  disabled={currentUser.user.status !== "single"}
+                  title={currentUser.user.status !== "single" ? "Only available for single users" : "Find matching profiles"}
+                >
+                  <Search className="mr-2 inline-block" size={16} />
+                  Find Matching
+                  {currentUser.user.status !== "single" && (
+                    <span className="text-xs text-red-500 ml-2">(Not available, Already Fixed )</span>
+                  )}
+                </button>
+              </Link>
 
-              <a href="/pricing" className="block w-full">
-                <button className="w-full text-gray-600 text-sm font-workSans mb-4 rounded-md text-left ml-6">
-                  <UserPlus className="mr-2 inline-block" />
+              <Link to="/pricing" className="block w-full">
+                <button className="w-full text-gray-600 text-sm font-workSans mb-4 rounded-md text-left ml-6 hover:text-gray-900 transition-colors">
+                  <UserPlus className="mr-2 inline-block" size={16} />
                   Upgrade Package
                 </button>
-              </a>
+              </Link>
 
               <button
-                className="w-full text-gray-500 text-sm font-workSans rounded-md text-left ml-6"
+                className="w-full text-gray-500 text-sm font-workSans rounded-md text-left ml-6 hover:text-gray-700 transition-colors"
                 onClick={handleLogout}
               >
-                <LogOut className="mr-2 inline-block" />
+                <LogOut className="mr-2 inline-block" size={16} />
                 Logout
               </button>
             </div>
@@ -281,10 +433,10 @@ const CustomerProfile = () => {
             <div className="bg-red-800 p-3 flex items-center justify-center">
               <Award className="mr-2 text-white" />
               <span className="text-white text-xl font-bold italic text-center">
-                Basic Plan
+                {currentUser.user.package_plan}
               </span>
             </div>
-            <div className="bg-white  rounded-lg p-6">
+            <div className="bg-white rounded-lg p-6">
               <h2 className="text-2xl font-normal mb-4 text-gray-800">
                 Basic Details
               </h2>
@@ -327,9 +479,7 @@ const CustomerProfile = () => {
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Physical Status:</span>{" "}
-
-                  {currentUser.user.physical_status }
-
+                  {currentUser.user.physical_status}
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Caste:</span>{" "}
@@ -353,7 +503,7 @@ const CustomerProfile = () => {
 
           {/* Family Details */}
           <div className="w-full mb-10">
-            <div className="bg-white  rounded-lg p-6">
+            <div className="bg-white rounded-lg p-6">
               <h2 className="text-2xl font-normal mb-4">Family Details</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-gray-700">
@@ -391,7 +541,6 @@ const CustomerProfile = () => {
                 <div className="text-gray-700">
                   <span className="font-normal">Mother Native Place:</span>{" "}
                   {currentUser.user.mothers_native_place}
-
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Brothers:</span>{" "}
@@ -399,9 +548,7 @@ const CustomerProfile = () => {
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Married Brothers:</span>{" "}
-
                   {currentUser.user.married_brothers}
-
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Sisters:</span>{" "}
@@ -409,13 +556,11 @@ const CustomerProfile = () => {
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Married Sisters:</span>{" "}
-
                   {currentUser.user.married_sisters}
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">More Family:</span>{" "}
                   {currentUser.user.more_family}
-
                 </div>
               </div>
             </div>
@@ -423,12 +568,11 @@ const CustomerProfile = () => {
 
           {/* Partner Preference */}
           <div className="w-full mb-10">
-            <div className="bg-white  rounded-lg p-6">
+            <div className="bg-white rounded-lg p-6">
               <h2 className="text-2xl font-normal mb-4">Partner Preference</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-gray-700">
                   <span className="font-normal">Country of Resident:</span>{" "}
-
                   {currentUser.user.partner_country_of_resident}
                 </div>
                 <div className="text-gray-700">
@@ -449,7 +593,7 @@ const CustomerProfile = () => {
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Marital Status:</span>{" "}
-                  {currentUser.user.partner_maritial_status}
+                  {currentUser.user.partner_marital_status}
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Minimum Age:</span>{" "}
@@ -498,7 +642,6 @@ const CustomerProfile = () => {
                 <div className="text-gray-700">
                   <span className="font-normal">Drinking Habits:</span>{" "}
                   {currentUser.user.partner_drinking_habit}
-
                 </div>
               </div>
             </div>
@@ -506,12 +649,11 @@ const CustomerProfile = () => {
 
           {/* Location */}
           <div className="w-full md:w-1/3 mb-10">
-            <div className="bg-white  rounded-lg p-6">
+            <div className="bg-white rounded-lg p-6">
               <h2 className="text-2xl font-normal mb-4">Location</h2>
               <div className="grid grid-cols-1 gap-4">
                 <div className="text-gray-700">
                   <span className="font-normal">Country of Birth:</span>{" "}
-
                   {currentUser.user.country_of_birth}
                 </div>
                 <div className="text-gray-700">
@@ -520,7 +662,7 @@ const CustomerProfile = () => {
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Country of Resident:</span>{" "}
-                  {currentUser.user.city_of_resident}
+                  {currentUser.user.country_of_resident}
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">City of Resident:</span>{" "}
@@ -529,7 +671,6 @@ const CustomerProfile = () => {
                 <div className="text-gray-700">
                   <span className="font-normal">Country of Citizenship:</span>{" "}
                   {currentUser.user.country_of_citizenship}
-
                 </div>
               </div>
             </div>
@@ -537,12 +678,11 @@ const CustomerProfile = () => {
 
           {/* Lifestyle */}
           <div className="w-full md:w-1/3 mb-10">
-            <div className="bg-white  rounded-lg p-6">
+            <div className="bg-white rounded-lg p-6">
               <h2 className="text-2xl font-normal mb-4">Lifestyle</h2>
               <div className="grid grid-cols-1 gap-4">
                 <div className="text-gray-700">
                   <span className="font-normal">Eating Habits:</span>{" "}
-
                   {currentUser.user.eating_habit}
                 </div>
                 <div className="text-gray-700">
@@ -552,7 +692,6 @@ const CustomerProfile = () => {
                 <div className="text-gray-700">
                   <span className="font-normal">Drinking Habits:</span>{" "}
                   {currentUser.user.drinking_habit}
-
                 </div>
               </div>
             </div>
@@ -560,20 +699,18 @@ const CustomerProfile = () => {
 
           {/* Education & Professional */}
           <div className="w-full md:w-1/3 mb-10">
-            <div className="bg-white  rounded-lg p-6">
+            <div className="bg-white rounded-lg p-6">
               <h2 className="text-2xl font-normal mb-4">
                 Education & Professional
               </h2>
               <div className="grid grid-cols-1 gap-4">
                 <div className="text-gray-700">
                   <span className="font-normal">Primary School:</span>{" "}
-
                   {currentUser.user.primary_school}
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Secondary School:</span>{" "}
                   {currentUser.user.secondary_school}
-
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Education:</span>{" "}
@@ -581,9 +718,7 @@ const CustomerProfile = () => {
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Education Details:</span>{" "}
-
                   {currentUser.user.education_details}
-
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Occupation:</span>{" "}
@@ -591,7 +726,6 @@ const CustomerProfile = () => {
                 </div>
                 <div className="text-gray-700">
                   <span className="font-normal">Occupation Details:</span>{" "}
-
                   {currentUser.user.occupation_details}
                 </div>
                 <div className="text-gray-700">
@@ -601,7 +735,6 @@ const CustomerProfile = () => {
                 <div className="text-gray-700">
                   <span className="font-normal">Annual Income:</span>{" "}
                   {currentUser.user.annual_income}
-
                 </div>
               </div>
             </div>
@@ -611,18 +744,29 @@ const CustomerProfile = () => {
 
       {/* Chart Modal */}
       {showChartModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg">
-            <div className="text-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[9998] p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-xl font-semibold text-gray-800">Chart Image</h3>
+            </div>
+            <div className="flex-1 overflow-auto p-6 flex items-center justify-center">
               <img
-                src={`http://localhost:7000/uploads/${currentUser?.user.chart_img || "/default-profile.jpg"}`}
-                className="max-w-full max-h-[300px] object-contain mx-auto"
+                src={getImageUrl(currentUser?.user.chart_img)}
+                className="max-w-full max-h-full object-contain"
                 alt="Chart"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  if (currentUser?.user.chart_img) {
+                    e.target.src = `https://mobile.viwahaa.com/uploads/${currentUser.user.chart_img}`;
+                  } else {
+                    e.target.src = "/default-profile.jpg";
+                  }
+                }}
               />
             </div>
-            <div className="text-right mt-4">
+            <div className="flex justify-end p-6 border-t border-gray-200 flex-shrink-0">
               <button
-                className="bg-gray-500 text-white px-6 py-2 rounded"
+                className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600 transition-colors"
                 onClick={() => setShowChartModal(false)}
               >
                 Close
@@ -632,20 +776,40 @@ const CustomerProfile = () => {
         </div>
       )}
 
+      {/* Image Cropper Modal - Highest z-index */}
+      {showCropper && (
+        <ImageCropper
+          image={imageToCrop}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
+
       {/* Profile Image Modal */}
       {showProfileModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg">
-            <div className="text-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[9998] p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-xl font-semibold text-gray-800">Profile Image</h3>
+            </div>
+            <div className="flex-1 overflow-auto p-6 flex items-center justify-center">
               <img
-                 src={`http://localhost:7000/uploads/${currentUser?.user.profile_img || "/default-profile.jpg"}`}
-                className="max-w-full max-h-[300px] object-contain mx-auto"
+                src={getImageUrl(currentUser?.user.profile_img)}
+                className="max-w-full max-h-full object-contain"
                 alt="Profile"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  if (currentUser?.user.profile_img) {
+                    e.target.src = `https://mobile.viwahaa.com/uploads/${currentUser.user.profile_img}`;
+                  } else {
+                    e.target.src = "/default-profile.jpg";
+                  }
+                }}
               />
             </div>
-            <div className="text-right mt-4">
+            <div className="flex justify-end p-6 border-t border-gray-200 flex-shrink-0">
               <button
-                className="bg-gray-500 text-white px-6 py-2 rounded"
+                className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600 transition-colors"
                 onClick={() => setShowProfileModal(false)}
               >
                 Close
@@ -654,7 +818,6 @@ const CustomerProfile = () => {
           </div>
         </div>
       )}
-
       {/* Edit Profile Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 overflow-y-auto">
@@ -721,6 +884,7 @@ const CustomerProfile = () => {
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                         placeholder="Email"
+                        readOnly
                       />
                     </div>
 
@@ -734,6 +898,7 @@ const CustomerProfile = () => {
                         value={formData.d_o_b}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        readOnly
                       />
                     </div>
 
@@ -776,6 +941,7 @@ const CustomerProfile = () => {
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                         placeholder="Contact No"
+                        readOnly
                       />
                     </div>
 
@@ -1509,6 +1675,219 @@ const CustomerProfile = () => {
                     </div>
                   </div>
                 </div>
+                 {/* Family Details Section */}
+                <div className="mb-6">
+                  <h6 className="text-center font-medium text-lg mb-3">
+                    Edit Family Details
+                  </h6>
+                  <hr className="mb-4" />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block mb-1">Family Value</label>
+                      <select
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        name="family_value"
+                        value={formData.family_value}
+                        onChange={handleInputChange}
+                      >
+                        <option value="">Family Value</option>
+                        <option value="conservative">Conservative</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="modern">Modern</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">Family Type</label>
+                      <select
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        name="family_type"
+                        value={formData.family_type}
+                        onChange={handleInputChange}
+                      >
+                        <option value="">Family Type</option>
+                        <option value="joint">Joint Family</option>
+                        <option value="nuclear">Nuclear Family</option>
+                        <option value="others">Others</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">Family Status</label>
+                      <select
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        name="family_status"
+                        value={formData.family_status}
+                        onChange={handleInputChange}
+                      >
+                        <option value="">Family Status</option>
+                        <option value="low">Lower Class</option>
+                        <option value="lowerMiddle">Lower Middle Class</option>
+                        <option value="middle">Middle Class</option>
+                        <option value="upperMiddle">Upper Middle Class</option>
+                        <option value="upper">Upper Class</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">
+                        Fathers Name<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="fathers_name"
+                        value={formData.fathers_name}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Fathers Name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">
+                        Fathers Occupation
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="fathers_occupation"
+                        value={formData.fathers_occupation}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Fathers Occupation"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">
+                        Fathers Native Place
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="fathers_native_place"
+                        value={formData.fathers_native_place}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Fathers Native Place"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">
+                        Mothers Name<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="mothers_name"
+                        value={formData.mothers_name}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Mothers Name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">
+                        Mothers Occupation
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="mothers_occupation"
+                        value={formData.mothers_occupation}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Mothers Occupation"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">
+                        Mothers Native Place
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="mothers_native_place"
+                        value={formData.mothers_native_place}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Mothers Native Place"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">
+                        Brothers<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="brothers"
+                        value={formData.brothers}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Brothers"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1">
+                        Married Brothers<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="married_brothers"
+                        value={formData.married_brothers}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Married Brothers"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">
+                        Sisters<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="sisters"
+                        value={formData.sisters}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Sisters"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">
+                        Married Sisters<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="married_sisters"
+                        value={formData.married_sisters}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Married Sisters"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-1">
+                        More Family Info<span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        name="more_family"
+                        value={formData.more_family}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Additional family information"
+                        rows="3"
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Partner Preferences Section */}
       <div className="mb-6">
@@ -1907,164 +2286,7 @@ const CustomerProfile = () => {
         </div>
       </div>
 
-                {/* Family Details Section */}
-                <div className="mb-6">
-                  <h6 className="text-center font-medium text-lg mb-3">
-                    Edit Family Details
-                  </h6>
-                  <hr className="mb-4" />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block mb-1">Family Value</label>
-                      <select
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                        name="family_value"
-                        value={formData.family_value}
-                        onChange={handleInputChange}
-                      >
-                        <option value="">Family Value</option>
-                        <option value="conservative">Conservative</option>
-                        <option value="moderate">Moderate</option>
-                        <option value="modern">Modern</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block mb-1">Family Type</label>
-                      <select
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                        name="family_type"
-                        value={formData.family_type}
-                        onChange={handleInputChange}
-                      >
-                        <option value="">Family Type</option>
-                        <option value="joint">Joint Family</option>
-                        <option value="nuclear">Nuclear Family</option>
-                        <option value="others">Others</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block mb-1">Family Status</label>
-                      <select
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                        name="family_status"
-                        value={formData.family_status}
-                        onChange={handleInputChange}
-                      >
-                        <option value="">Family Status</option>
-                        <option value="low">Lower Class</option>
-                        <option value="lowerMiddle">Lower Middle Class</option>
-                        <option value="middle">Middle Class</option>
-                        <option value="upperMiddle">Upper Middle Class</option>
-                        <option value="upper">Upper Class</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block mb-1">
-                        Fathers Name<span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="fathers_name"
-                        value={formData.fathers_name}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Fathers Name"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block mb-1">
-                        Fathers Occupation
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="fathers_occupation"
-                        value={formData.fathers_occupation}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Fathers Occupation"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block mb-1">
-                        Fathers Native Place
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="fathers_native_place"
-                        value={formData.fathers_native_place}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Fathers Native Place"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block mb-1">
-                        Mothers Name<span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="mothers_name"
-                        value={formData.mothers_name}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Mothers Name"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block mb-1">
-                        Mothers Occupation
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="mothers_occupation"
-                        value={formData.mothers_occupation}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Mothers Occupation"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block mb-1">
-                        Mothers Native Place
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name=".mothers_native_place"
-                        value={formData.mothers_native_place}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Mothers Native Place"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block mb-1">
-                        Brothers<span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="brothers"
-                        value={formData.brothers}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Brothers"
-                      />
-                    </div>
-                  </div>
-                </div>
+               
                 <div className="flex justify-end space-x-4 mt-6 border-t pt-4">
             <button
               type="button"

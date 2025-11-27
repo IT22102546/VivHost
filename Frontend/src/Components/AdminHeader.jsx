@@ -8,9 +8,53 @@ import { motion } from "framer-motion";
 
 function AdminHeader({ onToggleSidebar }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [userType, setUserType] = useState(null);
+  const [userName, setUserName] = useState("Admin");
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Check user type and name from localStorage
+  useEffect(() => {
+    const checkUserInfo = () => {
+      try {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setUserType(parsedUser.user_type_id);
+          // Set display name based on user type
+          if (parsedUser.user_type_id === 3) {
+            setUserName("Staff");
+          } else {
+            setUserName("Admin");
+          }
+        } else if (localStorage.getItem('isStaff') === 'true') {
+          setUserType(3);
+          setUserName("Staff");
+        } else if (localStorage.getItem('isAdmin') === 'true') {
+          setUserType(1);
+          setUserName("Admin");
+        } else {
+          const userTypeId = localStorage.getItem('userTypeId');
+          if (userTypeId) {
+            const typeId = parseInt(userTypeId);
+            setUserType(typeId);
+            setUserName(typeId === 3 ? "Staff" : "Admin");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking user info:", error);
+      }
+    };
+
+    checkUserInfo();
+  }, []);
+
+  // Determine display name based on user type
+  const getDisplayName = () => {
+    return userType === 3 ? "Staff" : "Admin";
+  };
+
   const handleLogout = () => {
     dispatch(signOut());
     navigate("/admin-sign-in");
@@ -45,9 +89,11 @@ function AdminHeader({ onToggleSidebar }) {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-300 text-white flex items-center justify-between px-10 shadow-md">
-      {/* Logo and Admin Title */}
+      {/* Logo and Title */}
       <div className="flex items-center">
-        <span className="ml-2 text-md font-workSans mr-3">Admin</span>
+        <span className="ml-2 text-md font-workSans mr-3">
+          {getDisplayName()} Panel
+        </span>
         <div>
           <motion.button
             className="p-2 hover:bg-yellow-600 rounded-md"
@@ -78,13 +124,13 @@ function AdminHeader({ onToggleSidebar }) {
 
       {/* Icons Section */}
       <div className="flex items-center space-x-4">
-        {/* Admin Dropdown */}
+        {/* User Dropdown */}
         <div className="relative">
           <button
             className="flex items-center space-x-1 bg-yellow-400 py-2 px-4 rounded-md"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
-            <span>Admin</span>
+            <span>{userName}</span>
             <ChevronDown className="w-4 h-4" />
           </button>
 
@@ -95,11 +141,17 @@ function AdminHeader({ onToggleSidebar }) {
               onMouseLeave={() => setIsDropdownOpen(false)}
             >
               <ul>
+                {/* User info in dropdown */}
+                <li className="px-4 py-2 border-b border-gray-200 text-sm">
+                  <div className="font-semibold">{userName}</div>
+                  <div className="text-gray-600">{getDisplayName()} User</div>
+                </li>
+                
                 {/* <li className="px-4 py-2 hover:bg-gray-100 flex items-center gap-2">
                   <Settings className="w-4 h-4" />
                   <span>Settings</span>
                 </li> */}
-                <button onClick={handleLogout}>
+                <button onClick={handleLogout} className="w-full">
                   <li className="px-4 py-2 hover:bg-gray-100 flex items-center gap-2 hover:cursor-pointer">
                     <LogOut className="w-4 h-4" />
                     <span>Log Out</span>

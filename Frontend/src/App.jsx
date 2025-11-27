@@ -38,10 +38,11 @@ function AppContent() {
           <Route path="/customer-profile" element={<CustomerProfile />} />
           <Route path="/matching" element={<Matching />} />
           <Route path="single-profile/:id" element={<SingleProfile />} />
+          <Route path="/dashboard" element={<AdminDashboard />} />
         </Route>
 
         <Route element={<OnlyAdminPrivateRoute />}>
-          <Route path="/dashboard" element={<AdminDashboard />} />
+          
         </Route>
         <Route path="/about" element={<AboutUs />} />
         <Route path="/services" element={<Services />} />

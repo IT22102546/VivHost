@@ -39,9 +39,7 @@ export default function SignUp() {
     if (!formData.phone) newErrors.phone = "Phone number is required";
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 5) {
-      newErrors.password = "Password must be at least 5 characters";
-    }
+    } 
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
@@ -60,7 +58,7 @@ export default function SignUp() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/signup", {
+      const response = await fetch("https://api.viwahaa.com/api/auth/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

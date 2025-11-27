@@ -8,8 +8,9 @@ export default defineConfig({
   server:{
     proxy:{
       '/api':{
-        target:'http://localhost:7000',
-        secure:false,
+       target: 'https://epicworkspace.site',
+       changeOrigin: true,
+       secure: false,
        
       }
     }

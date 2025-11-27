@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { signInSuccess } from "../redux/user/userSlice";
+import { signInSuccess, signOut } from "../redux/user/userSlice";
+import logo from '../assets/Logo/logowhite.png';
 
 export default function AdminSignIn() {
   const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ export default function AdminSignIn() {
     setError("");
 
     try {
-      const authResponse = await fetch("/api/auth/signin", {
+      const authResponse = await fetch("https://api.viwahaa.com/api/auth/signin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -35,9 +36,14 @@ export default function AdminSignIn() {
         throw new Error(authData.message || "Login failed");
       }
 
-      if (!authData.isAdmin) {
-        throw new Error("Admin verification failed");
+      // FIX: Match the backend allowed user types (1 = Admin, 3 = Staff)
+      const allowedUserTypes = [1, 3]; // Updated to match backend
+      if (!allowedUserTypes.includes(authData.user.user_type_id)) {
+        throw new Error("Admin/Staff verification failed");
       }
+
+      // Determine user role for display purposes
+      const userRole = authData.user.user_type_id === 1 ? "Admin" : "Staff";
 
       // Dispatch to Redux store
       dispatch(
@@ -45,6 +51,8 @@ export default function AdminSignIn() {
           token: authData.token,
           user: authData.user,
           isAdmin: true,
+          userType: authData.user.user_type_id,
+          userRole: userRole,
         })
       );
 
@@ -52,13 +60,18 @@ export default function AdminSignIn() {
       localStorage.setItem("token", authData.token);
       localStorage.setItem("user", JSON.stringify(authData.user));
       localStorage.setItem("isAdmin", "true");
+      localStorage.setItem("userType", authData.user.user_type_id);
+      localStorage.setItem("userRole", userRole);
 
+      // Redirect to dashboard
       navigate("/dashboard");
     } catch (err) {
       // Clear all auth data on error
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("isAdmin");
+      localStorage.removeItem("userType");
+      localStorage.removeItem("userRole");
       dispatch(signOut());
 
       setError(err.message || "An error occurred during login");
@@ -69,31 +82,24 @@ export default function AdminSignIn() {
 
   return (
     <>
-      {/* Container with yellow background and form */}
       <div className="relative w-full h-40">
-        {" "}
-        {/* Changed to h-screen to fill viewport */}
-        {/* Yellow Background Section - now takes full height */}
         <div className="absolute inset-0 bg-yellow-200 flex items-center justify-center">
           <img
-            src="../../src/assets/Logo/logowhite.png"
+            src={logo}
             alt="Logo"
-            className="h-14 absolute top-10" /* Positioned at top */
+            className="h-14 absolute top-10"
           />
         </div>
-        {/* Form Section - positioned absolutely over the yellow background */}
         <div className="absolute top-[350px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
-          {/* Sign In Header */}
           <div className="text-center">
             <h2 className="mt-6 text-3xl font-bold font-workSans text-gray-900">
-              Admin Portal Sign In
+              Admin & Staff Portal
             </h2>
             <p className="mt-2 text-sm text-gray-600 font-workSans">
-              Please enter your admin credentials
+              Please enter your admin or staff credentials
             </p>
           </div>
 
-          {/* Rest of your form content remains the same */}
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{error}</p>
@@ -102,7 +108,6 @@ export default function AdminSignIn() {
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
-              {/* Email Field */}
               <div>
                 <label
                   htmlFor="email"
@@ -117,12 +122,11 @@ export default function AdminSignIn() {
                   autoComplete="email"
                   required
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-200 focus:border-blue-500"
-                  placeholder="admin@example.com"
+                  placeholder="admin@example.com or staff@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              {/* Password Field */}
               <div>
                 <label
                   htmlFor="password"
@@ -144,7 +148,6 @@ export default function AdminSignIn() {
               </div>
             </div>
 
-            {/* Sign In Button */}
             <div>
               <button
                 type="submit"

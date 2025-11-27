@@ -16,7 +16,7 @@ function AdminProfileInterested() {
   useEffect(() => {
     const fetchProfileInterests = async () => {
       try {
-        const response = await fetch("/api/admin/profile-interests");
+        const response = await fetch("https://api.viwahaa.com/api/admin/profile-interests");
         if (!response.ok) {
           throw new Error("Failed to fetch profile interests");
         }
@@ -42,7 +42,7 @@ function AdminProfileInterested() {
       }
 
       const response = await fetch(
-        `/api/admin/profile-interests/search?search=${searchKey}`
+        `https://api.viwahaa.com/api/admin/profile-interests/search?search=${searchKey}`
       );
       if (!response.ok) {
         throw new Error("Failed to search profile interests");
@@ -70,7 +70,7 @@ function AdminProfileInterested() {
   const confirmDelete = async () => {
     try {
       const response = await fetch(
-        `/api/admin/profile-interests/${selectedInterest.id}`,
+        `https://api.viwahaa.com/api/admin/profile-interests/${selectedInterest.id}`,
         {
           method: "DELETE",
           headers: {

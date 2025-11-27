@@ -22,39 +22,64 @@ function AdminPackageBookings() {
 
   // Fetch bookings data
   useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const response = await fetch("/api/admin/bookings");
-        if (!response.ok) {
-          throw new Error("Failed to fetch bookings");
-        }
-        const data = await response.json();
-        setBookings(data);
-      } catch (error) {
-        setErrorMessage(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+const fetchBookings = async () => {
+  try {
+    const response = await fetch("https://api.viwahaa.com/api/admin/bookings");
+    if (!response.ok) {
+      throw new Error("Failed to fetch bookings");
+    }
+    const data = await response.json();
+    setBookings(data);
+  } catch (error) {
+    setErrorMessage(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
     fetchBookings();
   }, []);
 
   // Search function
-  const handleSearch = async () => {
-    try {
-      const response = await fetch(
-        `/api/admin/bookings/search?search=${searchKey}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to search bookings");
-      }
-      const data = await response.json();
-      setBookings(data);
-    } catch (error) {
-      setErrorMessage(error.message);
-    }
-  };
+const handleSearch = () => {
+  const searchTerm = searchKey.trim().toLowerCase();
+  
+  if (!searchTerm) {
+    // If search is empty, fetch all bookings again
+    setLoading(true);
+    fetch("https://api.viwahaa.com/api/admin/bookings")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch bookings");
+        }
+        return response.json();
+      })
+      .then(data => {
+        const bookingsWithDefaultPlan = data.map(booking => ({
+          ...booking,
+          package_plan: booking.package || 'No Plan'
+        }));
+        setBookings(bookingsWithDefaultPlan);
+        setErrorMessage("");
+      })
+      .catch(error => {
+        setErrorMessage(error.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+    return;
+  }
+
+  // Filter locally by name (first_name + last_name)
+  const filtered = bookings.filter(booking => 
+    (booking.first_name && booking.first_name.toLowerCase().includes(searchTerm)) ||
+    (booking.last_name && booking.last_name.toLowerCase().includes(searchTerm)) ||
+    (`${booking.first_name} ${booking.last_name}`.toLowerCase().includes(searchTerm))
+  );
+  
+  setBookings(filtered);
+};
 
   // Delete functions
   const handleDeleteClick = (booking) => {
@@ -65,7 +90,7 @@ function AdminPackageBookings() {
   const confirmDelete = async () => {
     try {
       const response = await fetch(
-        `/api/admin/bookings/${selectedBooking.id}`,
+        `https://api.viwahaa.com/api/admin/bookings/${selectedBooking.id}`,
         {
           method: "DELETE",
           headers: {
@@ -95,7 +120,7 @@ function AdminPackageBookings() {
   const confirmPayment = async () => {
     try {
       const response = await fetch(
-        `/api/admin/bookings/${selectedBooking.id}/pay`,
+        `https://api.viwahaa.com/api/admin/bookings/${selectedBooking.id}/pay`,
         {
           method: "PUT",
           headers: {
@@ -127,34 +152,46 @@ function AdminPackageBookings() {
     setShowStatusModal(true);
   };
 
-  const saveStatusChange = async () => {
-    try {
-      const response = await fetch(
-        `/api/admin/bookings/${selectedBooking.id}/status`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to update status");
+const saveStatusChange = async () => {
+  try {
+    const response = await fetch(
+      `https://api.viwahaa.com/api/admin/bookings/${selectedBooking.id}/status`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
       }
+    );
 
-      const updatedBookings = bookings.map((b) =>
-        b.id === selectedBooking.id ? { ...b, package_plan: newStatus } : b
-      );
-      setBookings(updatedBookings);
-      setShowStatusModal(false);
-      setSuccessMessage("Package plan updated successfully");
-    } catch (error) {
-      setErrorMessage(error.message);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update status");
     }
-  };
+
+    // Update both the booking package and the customer's package_plan in the UI
+    const updatedBookings = bookings.map((b) =>
+      b.id === selectedBooking.id 
+        ? { 
+            ...b, 
+            package: newStatus,  // Update the booked package
+            package_plan: newStatus // Update the customer's current plan
+          } 
+        : b
+    );
+    
+    setBookings(updatedBookings);
+    setShowStatusModal(false);
+    setSuccessMessage("Package plan updated successfully");
+    setErrorMessage("");
+  } catch (error) {
+    console.error("Update error:", error);
+    setErrorMessage(error.message);
+  }
+};
+
 
   // Image modal
   const handleImageClick = (imageUrl) => {
@@ -172,7 +209,7 @@ function AdminPackageBookings() {
   const updateExpiryDate = async () => {
     try {
       const response = await fetch(
-        `/api/admin/bookings/${selectedBooking.id}/expiry`,
+        `https://api.viwahaa.com/api/admin/bookings/${selectedBooking.id}/expiry`,
         {
           method: "PUT",
           headers: {
@@ -339,12 +376,31 @@ function AdminPackageBookings() {
                       <td className="px-4 py-3">
                         {booking.recipt_img && (
                           <img
-                            src={`http://viwahaa.com/storage/${booking.recipt_img}`}
+                            src={`https://api.viwahaa.com/uploads/receipts/${booking.recipt_img}`}
                             className="rounded-full w-10 h-10 cursor-pointer"
-                            onClick={() =>
-                              handleImageClick(`${booking.recipt_img}`)
-                            }
+                            onClick={() => handleImageClick(booking.recipt_img)}
                             alt="Receipt"
+                            onError={(e) => {
+                              const img = e.target;
+                              const originalSrc = img.src;
+                              
+                              // First fallback: try test.slqpsg.com with receipts path
+                              img.src = originalSrc.replace(
+                                'api.viwahaa.com',
+                                'mobile.viwahaa.com'
+                              );
+                              
+                              img.onerror = () => {
+                                // Second fallback: try api.epicworkspace.site without receipts path
+                                img.src = `https://api.viwahaa.com/uploads/${booking.recipt_img}`;
+                                
+                                img.onerror = () => {
+                                  // Final fallback: default image
+                                  img.src = '/default-receipt.png';
+                                  img.onerror = null; // Prevent infinite loop
+                                };
+                              };
+                            }}
                           />
                         )}
                       </td>
@@ -592,9 +648,21 @@ function AdminPackageBookings() {
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                     <div className="flex justify-center">
                       <img
-                        src={`http://viwahaa.com/storage/${selectedImage}`}
+                        src={`https://api.viwahaa.com/uploads/receipts/${selectedImage}`}
                         alt="Receipt"
                         className="max-w-full h-auto"
+                        onError={(e) => {
+                          // First try the alternative path without /receipts/
+                          if (e.target.src.includes('/receipts/')) {
+                            e.target.src = `https://api.viwahaa.com/uploads/${selectedImage}`;
+                          } 
+                          
+                          // If that also fails, use a default image
+                          else {
+                            e.target.onerror = null; // Prevent infinite loop
+                            e.target.src = `https://mobile.viwahaa.com/uploads/receipts/${selectedImage}`;
+                          }
+                        }}
                       />
                     </div>
                   </div>
